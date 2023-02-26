@@ -1,2 +1,3 @@
-# virtualized-list
-Virtualized List using vanilla JS
+# VirtualizedList
+
+Virtualized List using vanilla JS.
