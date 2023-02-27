@@ -45,7 +45,7 @@ const virtualizedList = new VirtualizedList({
     itemElement.innerHTML = item.title;
     return itemElement;
   },
-  itemKey: (item) => item.id,
+  itemKeyGetter: (item) => item.id, // optional
 });
 ```
 
@@ -55,7 +55,7 @@ const virtualizedList = new VirtualizedList({
 - `itemHeight` (number, optional) - the estimated item height
 - `items` (array of objects, **required**) - the items to display
 - `itemRenderer` (function, **required**) - accepts 1 or 2 parameters, the first one being the current item, and should return a HTMLElement
-- `itemKey` (function, optional) - a function which accepts the item and returns a **unique** ID. If not provided, the library will search for: 1) the `id` field of the item; 2) the `key` field of the item; 3) the actual index of the item in the array.
+- `itemKeyGetter` (function, optional) - a function which accepts the item and returns a **unique** ID. If not provided, the library will search for: 1) the `id` field of the item; 2) the `key` field of the item; 3) the actual index of the item in the array.
 
 ### Methods
 
