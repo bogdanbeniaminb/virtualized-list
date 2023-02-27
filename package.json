@@ -1,13 +1,13 @@
 {
   "name": "@bogdanbeniaminb/virtualized-list",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Virtualized List using vanilla JS",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
     "test": "jest --config jestconfig.json --passWithNoTests",
-    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "format": "prettier --write \"src/**/*.ts\"",
     "lint": "tslint -p tsconfig.json",
     "prepare": "npm run build",
     "preversion": "npm run lint",
