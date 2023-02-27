@@ -6,7 +6,7 @@ export type VirtualizedListItemElement = {
 export type VirtualizedListOptions<T> = {
   listElement: HTMLElement;
   itemHeight: number;
-  items: Array<T>;
+  items: T[];
   itemRenderer: (item: T) => HTMLElement;
   itemKey: (item: T) => string;
 };
@@ -21,15 +21,15 @@ export default class VirtualizedList<T> {
   protected listElement: HTMLElement;
   protected wrapperElement: HTMLElement;
   protected itemHeight: number;
-  protected items: Array<T> = [];
+  protected items: T[] = [];
   protected itemsMap: Map<string, T> = new Map();
   protected itemRenderer: (item: T) => HTMLElement;
   protected itemKeyGetter: (item: T) => string;
 
   protected listElementHeight: number = 0;
   protected visibleItemsCount: number = 0;
-  protected visibleItems: Array<T> = [];
-  protected visibleItemElements: Array<VirtualizedListItemElement> = [];
+  protected visibleItems: T[] = [];
+  protected visibleItemElements: VirtualizedListItemElement[] = [];
   protected extraItemsBuffer: number = 5;
   protected start: number = 0;
   protected end: number = 0;
@@ -53,7 +53,7 @@ export default class VirtualizedList<T> {
     window.addEventListener('resize', this.onResize.bind(this));
   }
 
-  protected setItems(items: Array<T>) {
+  protected setItems(items: T[]) {
     const itemsMap = new Map();
     items.forEach((item) => {
       itemsMap.set(this.itemKeyGetter(item), item);
@@ -62,7 +62,7 @@ export default class VirtualizedList<T> {
     this.items = items;
   }
 
-  updateItems(items: Array<T>) {
+  updateItems(items: T[]) {
     this.setItems(items);
     this.listElement.scrollTop = 0;
     this.updateListElementHeight();
