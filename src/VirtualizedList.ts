@@ -8,55 +8,81 @@ export type VirtualizedListOptions<T> = {
   itemHeight: number;
   items: T[];
   itemRenderer: (item: T) => HTMLElement;
-  itemKey: (item: T) => string;
+  itemKeyGetter?: (item: T, index: number) => string;
 };
 
 /**
  * Virtualized list for rendering large lists of items.
  * The list is rendered with a fixed height and only the visible items are rendered.
  *
- * Developed by Bogdan Barbu.
+ * Developed by Bogdan Barbu (bbarbu@smartimpact.fr), 2023.
  */
 export default class VirtualizedList<T> {
   protected listElement: HTMLElement;
   protected wrapperElement: HTMLElement;
   protected itemHeight: number;
-  protected items: T[] = [];
-  protected itemsMap: Map<string, T> = new Map();
+  protected items: T[];
+  protected itemsMap: Map<string, T>;
   protected itemRenderer: (item: T) => HTMLElement;
-  protected itemKeyGetter: (item: T) => string;
+  protected itemKeyGetter: (item: T, index: number) => string;
 
-  protected listElementHeight: number = 0;
-  protected visibleItemsCount: number = 0;
-  protected visibleItems: T[] = [];
+  protected listElementHeight: number;
+  protected visibleItemsCount: number;
+  protected visibleItems: T[];
   protected visibleItemElements: VirtualizedListItemElement[] = [];
   protected extraItemsBuffer: number = 5;
   protected start: number = 0;
   protected end: number = 0;
   protected cachedItemHeights: Record<string, number> = {};
 
-  constructor({ listElement, itemHeight, items, itemRenderer, itemKey }: VirtualizedListOptions<T>) {
+  constructor({
+    listElement,
+    itemHeight,
+    items,
+    itemRenderer,
+    itemKeyGetter = null,
+  }: VirtualizedListOptions<T>) {
     this.listElement = listElement;
-    this.listElement.style.overflowY = 'auto';
-    this.wrapperElement = document.createElement('div');
-    this.wrapperElement.classList.add('virtualized-list-wrapper');
+    this.listElement.style.overflowY = "auto";
+    this.wrapperElement = document.createElement("div");
+    this.wrapperElement.classList.add("virtualized-list-wrapper");
     this.listElement.appendChild(this.wrapperElement);
     this.itemHeight = itemHeight;
 
     this.itemRenderer = itemRenderer;
-    this.itemKeyGetter = itemKey;
+    this.itemKeyGetter = itemKeyGetter || this.defaultItemKeyGetter.bind(this);
     this.setItems(items);
 
     this.updateListElementHeight();
     this.render();
-    this.listElement.addEventListener('scroll', this.onScroll.bind(this));
-    window.addEventListener('resize', this.onResize.bind(this));
+    this.listElement.addEventListener("scroll", this.onScroll.bind(this));
+    window.addEventListener("resize", this.onResize.bind(this));
+  }
+
+  /**
+   * If no item key getter is provided, try to use the id or key property of the item.
+   * If none of these are present, use the index.
+   */
+  protected defaultItemKeyGetter(item: T, index: number): string | number {
+    if (typeof item !== "object") {
+      return index;
+    }
+
+    if (item.hasOwnProperty("id")) {
+      return (item as any).id.toString();
+    }
+
+    if (item.hasOwnProperty("key")) {
+      return (item as any).key.toString();
+    }
+
+    return index;
   }
 
   protected setItems(items: T[]) {
     const itemsMap = new Map();
-    items.forEach((item) => {
-      itemsMap.set(this.itemKeyGetter(item), item);
+    items.forEach((item, index) => {
+      itemsMap.set(this.itemKeyGetter(item, index), item);
     });
     this.itemsMap = itemsMap;
     this.items = items;
@@ -125,9 +151,14 @@ export default class VirtualizedList<T> {
 
   protected calculateOffsets() {
     const offset = this.calculateOffsetTop();
-    const maxVisibleItemsCount = Math.ceil(this.listElementHeight / this.itemHeight);
+    const maxVisibleItemsCount = Math.ceil(
+      this.listElementHeight / this.itemHeight
+    );
     const start = Math.max(0, offset - this.extraItemsBuffer);
-    const end = Math.min(offset + maxVisibleItemsCount + this.extraItemsBuffer, this.itemsMap.size);
+    const end = Math.min(
+      offset + maxVisibleItemsCount + this.extraItemsBuffer,
+      this.itemsMap.size
+    );
 
     return { start, end };
   }
@@ -150,17 +181,21 @@ export default class VirtualizedList<T> {
     const scrollTopPosition = this.listElement.scrollTop;
 
     // Render the visible items.
-    const renderedItems: VirtualizedListItemElement[] = this.visibleItems.map((item) => {
-      const itemKey = this.itemKeyGetter(item);
-      const existing = this.visibleItemElements.find((element) => element.itemKey === itemKey);
-      if (existing) {
-        return existing;
-      }
+    const renderedItems: VirtualizedListItemElement[] = this.visibleItems.map(
+      (item, index) => {
+        const itemKey = this.itemKeyGetter(item, index + this.start);
+        const existing = this.visibleItemElements.find(
+          (element) => element.itemKey === itemKey
+        );
+        if (existing) {
+          return existing;
+        }
 
-      // Render the item.
-      const renderedItem = this.itemRenderer(item);
-      return { itemKey, renderedItem };
-    });
+        // Render the item.
+        const renderedItem = this.itemRenderer(item);
+        return { itemKey, renderedItem };
+      }
+    );
 
     // Remove the items that are no longer visible.
     this.visibleItemElements.forEach((element) => {
@@ -190,12 +225,14 @@ export default class VirtualizedList<T> {
 
     // Cache the item heights.
     renderedItems.forEach((element) => {
-      this.cachedItemHeights[element.itemKey] ||= element.renderedItem.clientHeight;
+      this.cachedItemHeights[element.itemKey] ||=
+        element.renderedItem.clientHeight;
     });
 
     // Update the item height, but only if it hasn't been set yet.
     if (!this.itemHeight) {
-      this.itemHeight = this.visibleItemElements?.[0]?.renderedItem.clientHeight;
+      this.itemHeight =
+        this.visibleItemElements?.[0]?.renderedItem.clientHeight;
     }
   }
 }
